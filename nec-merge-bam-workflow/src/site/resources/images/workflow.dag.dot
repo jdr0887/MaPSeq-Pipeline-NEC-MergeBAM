@@ -1,0 +1,17 @@
+digraph G {
+  PicardMergeSAMCLI_1 [ label="PicardMergeSAMCLI_1" ];
+  PicardAddOrReplaceReadGroupsCLI_2 [ label="PicardAddOrReplaceReadGroupsCLI_2" ];
+  PicardMarkDuplicatesCLI_3 [ label="PicardMarkDuplicatesCLI_3" ];
+  SAMToolsIndexCLI_4 [ label="SAMToolsIndexCLI_4" ];
+  SAMToolsFlagstatCLI_5 [ label="SAMToolsFlagstatCLI_5" ];
+  GATKUnifiedGenotyperCLI_6 [ label="GATKUnifiedGenotyperCLI_6" ];
+  CalculateMaximumLikelihoodFromVCFCLI_7 [ label="CalculateMaximumLikelihoodFromVCFCLI_7" ];
+  RemoveCLI_8 [ label="RemoveCLI_8" ];
+  PicardMergeSAMCLI_1 -> PicardAddOrReplaceReadGroupsCLI_2;
+  PicardAddOrReplaceReadGroupsCLI_2 -> PicardMarkDuplicatesCLI_3;
+  PicardMarkDuplicatesCLI_3 -> SAMToolsIndexCLI_4;
+  SAMToolsIndexCLI_4 -> SAMToolsFlagstatCLI_5;
+  SAMToolsIndexCLI_4 -> GATKUnifiedGenotyperCLI_6;
+  GATKUnifiedGenotyperCLI_6 -> CalculateMaximumLikelihoodFromVCFCLI_7;
+  CalculateMaximumLikelihoodFromVCFCLI_7 -> RemoveCLI_8;
+}

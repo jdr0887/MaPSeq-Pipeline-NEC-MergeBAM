@@ -1,0 +1,17 @@
+<features name="mapseq-pipeline-nec-merge-bam-${project.version}">
+
+  <feature name="mapseq-pipeline-nec-merge-bam" version="${project.version}" resolver="(obr)">
+    <bundle>mvn:edu.unc.mapseq.pipelines.nec-merge-bam/nec-merge-bam-workflow/${project.version}</bundle>
+    <bundle>mvn:edu.unc.mapseq.pipelines.nec-merge-bam/nec-merge-bam-commands/${project.version}</bundle>
+    <bundle>mvn:edu.unc.mapseq.pipelines.nec-merge-bam.nec-merge-bam-web/nec-merge-bam-web-service-api/${project.version}</bundle>
+    <bundle>mvn:edu.unc.mapseq.pipelines.nec-merge-bam.nec-merge-bam-web/nec-merge-bam-web-service-impl/${project.version}</bundle>
+    <bundle start-level="100">mvn:edu.unc.mapseq.pipelines.nec-merge-bam/nec-merge-bam-executor/${project.version}</bundle>
+    <bundle start-level="100">mvn:edu.unc.mapseq.pipelines.nec-merge-bam/nec-merge-bam-messaging/${project.version}</bundle>
+  </feature>
+
+</features>
+
+
+
+
+
