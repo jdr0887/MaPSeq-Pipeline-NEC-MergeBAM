@@ -14,6 +14,7 @@ import org.jgrapht.DirectedGraph;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.renci.jlrm.condor.CondorJob;
+import org.renci.jlrm.condor.CondorJobBuilder;
 import org.renci.jlrm.condor.CondorJobEdge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,10 +38,10 @@ import edu.unc.mapseq.module.picard.PicardMergeSAMCLI;
 import edu.unc.mapseq.module.picard.PicardSortOrderType;
 import edu.unc.mapseq.module.samtools.SAMToolsFlagstatCLI;
 import edu.unc.mapseq.module.samtools.SAMToolsIndexCLI;
-import edu.unc.mapseq.workflow.AbstractWorkflow;
 import edu.unc.mapseq.workflow.WorkflowException;
-import edu.unc.mapseq.workflow.WorkflowJobFactory;
 import edu.unc.mapseq.workflow.WorkflowUtil;
+import edu.unc.mapseq.workflow.impl.AbstractWorkflow;
+import edu.unc.mapseq.workflow.impl.WorkflowJobFactory;
 
 public class NECMergeBAMWorkflow extends AbstractWorkflow {
 
@@ -189,138 +190,132 @@ public class NECMergeBAMWorkflow extends AbstractWorkflow {
             }
 
             // new job
-            CondorJob mergeBAMFilesJob = WorkflowJobFactory.createJob(++count, PicardMergeSAMCLI.class,
-                    getWorkflowPlan());
-            mergeBAMFilesJob.setSiteName(siteName);
-            mergeBAMFilesJob.addArgument(PicardMergeSAMCLI.SORTORDER, "unsorted");
+            CondorJobBuilder builder = WorkflowJobFactory
+                    .createJob(++count, PicardMergeSAMCLI.class, getWorkflowPlan()).siteName(siteName);
             File mergeBAMFilesOut = new File(subjectFinalOutputDir, String.format("%s.merged.bam", subjectName));
-            mergeBAMFilesJob.addArgument(PicardMergeSAMCLI.OUTPUT, mergeBAMFilesOut.getAbsolutePath());
+            builder.addArgument(PicardMergeSAMCLI.SORTORDER, "unsorted").addArgument(PicardMergeSAMCLI.OUTPUT,
+                    mergeBAMFilesOut.getAbsolutePath());
             for (File f : bamFileList) {
                 logger.info("Using file: {}", f.getAbsolutePath());
-                mergeBAMFilesJob.addArgument(PicardMergeSAMCLI.INPUT, f.getAbsolutePath());
+                builder.addArgument(PicardMergeSAMCLI.INPUT, f.getAbsolutePath());
             }
+            CondorJob mergeBAMFilesJob = builder.build();
+            logger.info(mergeBAMFilesJob.toString());
             graph.addVertex(mergeBAMFilesJob);
 
             // new job
-            CondorJob picardAddOrReplaceReadGroupsJob = WorkflowJobFactory.createJob(++count,
-                    PicardAddOrReplaceReadGroupsCLI.class, getWorkflowPlan());
-            picardAddOrReplaceReadGroupsJob.setSiteName(siteName);
-            picardAddOrReplaceReadGroupsJob.addArgument(PicardAddOrReplaceReadGroupsCLI.INPUT,
-                    mergeBAMFilesOut.getAbsolutePath());
-            picardAddOrReplaceReadGroupsJob.addArgument(PicardAddOrReplaceReadGroupsCLI.READGROUPCENTERNAME, "UNC");
-            picardAddOrReplaceReadGroupsJob.addArgument(PicardAddOrReplaceReadGroupsCLI.READGROUPID, subjectName);
-            picardAddOrReplaceReadGroupsJob.addArgument(PicardAddOrReplaceReadGroupsCLI.READGROUPLIBRARY, subjectName);
-            picardAddOrReplaceReadGroupsJob.addArgument(PicardAddOrReplaceReadGroupsCLI.READGROUPPLATFORM,
-                    "Illumina HiSeq 2000");
-            picardAddOrReplaceReadGroupsJob.addArgument(PicardAddOrReplaceReadGroupsCLI.READGROUPPLATFORMUNIT,
-                    subjectName);
-            picardAddOrReplaceReadGroupsJob.addArgument(PicardAddOrReplaceReadGroupsCLI.READGROUPSAMPLENAME,
-                    subjectName);
-            picardAddOrReplaceReadGroupsJob.addArgument(PicardAddOrReplaceReadGroupsCLI.SORTORDER,
-                    PicardSortOrderType.COORDINATE.toString().toLowerCase());
+            builder = WorkflowJobFactory.createJob(++count, PicardAddOrReplaceReadGroupsCLI.class, getWorkflowPlan())
+                    .siteName(siteName);
             File picardAddOrReplaceReadGroupsOut = new File(subjectFinalOutputDir, mergeBAMFilesOut.getName().replace(
                     ".bam", ".rg.bam"));
-            picardAddOrReplaceReadGroupsJob.addArgument(PicardAddOrReplaceReadGroupsCLI.OUTPUT,
-                    picardAddOrReplaceReadGroupsOut.getAbsolutePath());
+            builder.addArgument(PicardAddOrReplaceReadGroupsCLI.INPUT, mergeBAMFilesOut.getAbsolutePath())
+                    .addArgument(PicardAddOrReplaceReadGroupsCLI.READGROUPCENTERNAME, "UNC")
+                    .addArgument(PicardAddOrReplaceReadGroupsCLI.READGROUPID, subjectName)
+                    .addArgument(PicardAddOrReplaceReadGroupsCLI.READGROUPLIBRARY, subjectName)
+                    .addArgument(PicardAddOrReplaceReadGroupsCLI.READGROUPPLATFORM, "Illumina HiSeq 2000")
+                    .addArgument(PicardAddOrReplaceReadGroupsCLI.READGROUPPLATFORMUNIT, subjectName)
+                    .addArgument(PicardAddOrReplaceReadGroupsCLI.READGROUPSAMPLENAME, subjectName)
+                    .addArgument(PicardAddOrReplaceReadGroupsCLI.SORTORDER,
+                            PicardSortOrderType.COORDINATE.toString().toLowerCase())
+                    .addArgument(PicardAddOrReplaceReadGroupsCLI.OUTPUT,
+                            picardAddOrReplaceReadGroupsOut.getAbsolutePath());
+            CondorJob picardAddOrReplaceReadGroupsJob = builder.build();
+            logger.info(picardAddOrReplaceReadGroupsJob.toString());
             graph.addVertex(picardAddOrReplaceReadGroupsJob);
             graph.addEdge(mergeBAMFilesJob, picardAddOrReplaceReadGroupsJob);
 
             // new job
-            CondorJob picardMarkDuplicatesJob = WorkflowJobFactory.createJob(++count, PicardMarkDuplicatesCLI.class,
-                    getWorkflowPlan());
-            picardMarkDuplicatesJob.setSiteName(siteName);
-            picardMarkDuplicatesJob.addArgument(PicardMarkDuplicatesCLI.INPUT,
-                    picardAddOrReplaceReadGroupsOut.getAbsolutePath());
+            builder = WorkflowJobFactory.createJob(++count, PicardMarkDuplicatesCLI.class, getWorkflowPlan()).siteName(
+                    siteName);
             File picardMarkDuplicatesOutput = new File(subjectFinalOutputDir, picardAddOrReplaceReadGroupsOut.getName()
                     .replace(".bam", ".deduped.bam"));
-            picardMarkDuplicatesJob.addArgument(PicardMarkDuplicatesCLI.OUTPUT,
-                    picardMarkDuplicatesOutput.getAbsolutePath());
             File picardMarkDuplicatesMetrics = new File(subjectFinalOutputDir, picardMarkDuplicatesOutput.getName()
                     .replace(".bam", ".metrics"));
-            picardMarkDuplicatesJob.addArgument(PicardMarkDuplicatesCLI.METRICSFILE,
-                    picardMarkDuplicatesMetrics.getAbsolutePath());
+            builder.addArgument(PicardMarkDuplicatesCLI.INPUT, picardAddOrReplaceReadGroupsOut.getAbsolutePath())
+                    .addArgument(PicardMarkDuplicatesCLI.OUTPUT, picardMarkDuplicatesOutput.getAbsolutePath())
+                    .addArgument(PicardMarkDuplicatesCLI.METRICSFILE, picardMarkDuplicatesMetrics.getAbsolutePath());
+            CondorJob picardMarkDuplicatesJob = builder.build();
+            logger.info(picardMarkDuplicatesJob.toString());
             graph.addVertex(picardMarkDuplicatesJob);
             graph.addEdge(picardAddOrReplaceReadGroupsJob, picardMarkDuplicatesJob);
 
             // new job
-            CondorJob samtoolsIndexJob = WorkflowJobFactory.createJob(++count, SAMToolsIndexCLI.class,
-                    getWorkflowPlan());
-            samtoolsIndexJob.setSiteName(siteName);
-            samtoolsIndexJob.addArgument(SAMToolsIndexCLI.INPUT, picardMarkDuplicatesOutput.getAbsolutePath());
+            builder = WorkflowJobFactory.createJob(++count, SAMToolsIndexCLI.class, getWorkflowPlan()).siteName(
+                    siteName);
             File samtoolsIndexOutput = new File(subjectFinalOutputDir, picardMarkDuplicatesOutput.getName().replace(
                     ".bam", ".bai"));
-            samtoolsIndexJob.addArgument(SAMToolsIndexCLI.OUTPUT, samtoolsIndexOutput.getAbsolutePath());
+            builder.addArgument(SAMToolsIndexCLI.INPUT, picardMarkDuplicatesOutput.getAbsolutePath()).addArgument(
+                    SAMToolsIndexCLI.OUTPUT, samtoolsIndexOutput.getAbsolutePath());
+            CondorJob samtoolsIndexJob = builder.build();
+            logger.info(samtoolsIndexJob.toString());
             graph.addVertex(samtoolsIndexJob);
             graph.addEdge(picardMarkDuplicatesJob, samtoolsIndexJob);
 
             // new job
-            CondorJob samtoolsFlagstatJob = WorkflowJobFactory.createJob(++count, SAMToolsFlagstatCLI.class,
-                    getWorkflowPlan());
-            samtoolsFlagstatJob.setSiteName(siteName);
-            samtoolsFlagstatJob.addArgument(SAMToolsFlagstatCLI.INPUT, picardMarkDuplicatesOutput.getAbsolutePath());
+            builder = WorkflowJobFactory.createJob(++count, SAMToolsFlagstatCLI.class, getWorkflowPlan()).siteName(
+                    siteName);
             File samtoolsFlagstatOutput = new File(subjectFinalOutputDir, picardMarkDuplicatesOutput.getName().replace(
                     ".bam", ".flagstat"));
-            samtoolsFlagstatJob.addArgument(SAMToolsFlagstatCLI.OUTPUT, samtoolsFlagstatOutput.getAbsolutePath());
+            builder.addArgument(SAMToolsFlagstatCLI.INPUT, picardMarkDuplicatesOutput.getAbsolutePath()).addArgument(
+                    SAMToolsFlagstatCLI.OUTPUT, samtoolsFlagstatOutput.getAbsolutePath());
+            CondorJob samtoolsFlagstatJob = builder.build();
+            logger.info(samtoolsFlagstatJob.toString());
             graph.addVertex(samtoolsFlagstatJob);
             graph.addEdge(samtoolsIndexJob, samtoolsFlagstatJob);
 
-            CondorJob unifiedGenotyperJob = WorkflowJobFactory.createJob(++count, GATKUnifiedGenotyperCLI.class,
-                    getWorkflowPlan());
-            unifiedGenotyperJob.setSiteName(siteName);
-            unifiedGenotyperJob.addArgument(GATKUnifiedGenotyperCLI.INPUTFILE,
-                    picardMarkDuplicatesOutput.getAbsolutePath());
+            builder = WorkflowJobFactory.createJob(++count, GATKUnifiedGenotyperCLI.class, getWorkflowPlan())
+                    .siteName(siteName).numberOfProcessors(4);
             File unifiedGenotyperOutput = new File(subjectFinalOutputDir, picardMarkDuplicatesOutput.getName().replace(
                     ".bam", ".vcf"));
-            unifiedGenotyperJob.addArgument(GATKUnifiedGenotyperCLI.OUT, unifiedGenotyperOutput.getAbsolutePath());
-            unifiedGenotyperJob.addArgument(GATKUnifiedGenotyperCLI.KEY, GATKKey);
-            unifiedGenotyperJob.addArgument(GATKUnifiedGenotyperCLI.INTERVALS, unifiedGenotyperIntervalList);
-            unifiedGenotyperJob.addArgument(GATKUnifiedGenotyperCLI.REFERENCESEQUENCE, referenceSequence);
-            unifiedGenotyperJob.addArgument(GATKUnifiedGenotyperCLI.DBSNP, unifiedGenotyperDBSNP);
-            unifiedGenotyperJob.addArgument(GATKUnifiedGenotyperCLI.PHONEHOME, GATKPhoneHomeType.NO_ET.toString());
-            unifiedGenotyperJob.addArgument(GATKUnifiedGenotyperCLI.DOWNSAMPLINGTYPE,
-                    GATKDownsamplingType.NONE.toString());
-            unifiedGenotyperJob.addArgument(GATKUnifiedGenotyperCLI.GENOTYPELIKELIHOODSMODEL, "BOTH");
-            unifiedGenotyperJob.addArgument(GATKUnifiedGenotyperCLI.OUTPUTMODE, "EMIT_ALL_SITES");
-            unifiedGenotyperJob.addArgument(GATKUnifiedGenotyperCLI.ANNOTATION, "AlleleBalance");
-            unifiedGenotyperJob.addArgument(GATKUnifiedGenotyperCLI.ANNOTATION, "DepthOfCoverage");
-            unifiedGenotyperJob.addArgument(GATKUnifiedGenotyperCLI.ANNOTATION, "HomopolymerRun");
-            unifiedGenotyperJob.addArgument(GATKUnifiedGenotyperCLI.ANNOTATION, "MappingQualityZero");
-            unifiedGenotyperJob.addArgument(GATKUnifiedGenotyperCLI.ANNOTATION, "QualByDepth");
-            unifiedGenotyperJob.addArgument(GATKUnifiedGenotyperCLI.ANNOTATION, "RMSMappingQuality");
-            unifiedGenotyperJob.addArgument(GATKUnifiedGenotyperCLI.ANNOTATION, "HaplotypeScore");
-            unifiedGenotyperJob.addArgument(GATKUnifiedGenotyperCLI.DOWNSAMPLETOCOVERAGE, "250");
-            unifiedGenotyperJob.addArgument(GATKUnifiedGenotyperCLI.STANDCALLCONF, "4");
-            unifiedGenotyperJob.addArgument(GATKUnifiedGenotyperCLI.STANDEMITCONF, "0");
-            unifiedGenotyperJob.addArgument(GATKUnifiedGenotyperCLI.NUMTHREADS, "4");
-            unifiedGenotyperJob.setNumberOfProcessors(4);
             File unifiedGenotyperMetrics = new File(subjectFinalOutputDir, picardMarkDuplicatesOutput.getName()
                     .replace(".bam", ".metrics"));
-            unifiedGenotyperJob.addArgument(GATKUnifiedGenotyperCLI.METRICS, unifiedGenotyperMetrics.getAbsolutePath());
+            builder.addArgument(GATKUnifiedGenotyperCLI.INPUTFILE, picardMarkDuplicatesOutput.getAbsolutePath())
+                    .addArgument(GATKUnifiedGenotyperCLI.OUT, unifiedGenotyperOutput.getAbsolutePath())
+                    .addArgument(GATKUnifiedGenotyperCLI.KEY, GATKKey)
+                    .addArgument(GATKUnifiedGenotyperCLI.INTERVALS, unifiedGenotyperIntervalList)
+                    .addArgument(GATKUnifiedGenotyperCLI.REFERENCESEQUENCE, referenceSequence)
+                    .addArgument(GATKUnifiedGenotyperCLI.DBSNP, unifiedGenotyperDBSNP)
+                    .addArgument(GATKUnifiedGenotyperCLI.PHONEHOME, GATKPhoneHomeType.NO_ET.toString())
+                    .addArgument(GATKUnifiedGenotyperCLI.DOWNSAMPLINGTYPE, GATKDownsamplingType.NONE.toString())
+                    .addArgument(GATKUnifiedGenotyperCLI.GENOTYPELIKELIHOODSMODEL, "BOTH")
+                    .addArgument(GATKUnifiedGenotyperCLI.OUTPUTMODE, "EMIT_ALL_SITES")
+                    .addArgument(GATKUnifiedGenotyperCLI.ANNOTATION, "AlleleBalance")
+                    .addArgument(GATKUnifiedGenotyperCLI.ANNOTATION, "DepthOfCoverage")
+                    .addArgument(GATKUnifiedGenotyperCLI.ANNOTATION, "HomopolymerRun")
+                    .addArgument(GATKUnifiedGenotyperCLI.ANNOTATION, "MappingQualityZero")
+                    .addArgument(GATKUnifiedGenotyperCLI.ANNOTATION, "QualByDepth")
+                    .addArgument(GATKUnifiedGenotyperCLI.ANNOTATION, "RMSMappingQuality")
+                    .addArgument(GATKUnifiedGenotyperCLI.ANNOTATION, "HaplotypeScore")
+                    .addArgument(GATKUnifiedGenotyperCLI.DOWNSAMPLETOCOVERAGE, "250")
+                    .addArgument(GATKUnifiedGenotyperCLI.STANDCALLCONF, "4")
+                    .addArgument(GATKUnifiedGenotyperCLI.STANDEMITCONF, "0")
+                    .addArgument(GATKUnifiedGenotyperCLI.NUMTHREADS, "4")
+                    .addArgument(GATKUnifiedGenotyperCLI.METRICS, unifiedGenotyperMetrics.getAbsolutePath());
+            CondorJob unifiedGenotyperJob = builder.build();
+            logger.info(unifiedGenotyperJob.toString());
             graph.addVertex(unifiedGenotyperJob);
             graph.addEdge(samtoolsIndexJob, unifiedGenotyperJob);
 
             // new job
-            CondorJob calculateMaximumLikelihoodsFromVCFJob = WorkflowJobFactory.createJob(++count,
-                    CalculateMaximumLikelihoodFromVCFCLI.class, getWorkflowPlan());
-            calculateMaximumLikelihoodsFromVCFJob.setSiteName(siteName);
-            calculateMaximumLikelihoodsFromVCFJob.addArgument(CalculateMaximumLikelihoodFromVCFCLI.VCF,
-                    unifiedGenotyperOutput.getAbsolutePath());
-            calculateMaximumLikelihoodsFromVCFJob.addArgument(CalculateMaximumLikelihoodFromVCFCLI.INTERVALLIST,
-                    idCheckIntervalList);
-            calculateMaximumLikelihoodsFromVCFJob.addArgument(CalculateMaximumLikelihoodFromVCFCLI.SAMPLE,
-                    unifiedGenotyperOutput.getName().replace(".vcf", ""));
-            calculateMaximumLikelihoodsFromVCFJob.addArgument(CalculateMaximumLikelihoodFromVCFCLI.ECDATA,
-                    idCheckExomeChipData);
-            calculateMaximumLikelihoodsFromVCFJob.addArgument(CalculateMaximumLikelihoodFromVCFCLI.OUTPUT,
-                    subjectFinalOutputDir.getAbsolutePath());
+            builder = WorkflowJobFactory.createJob(++count, CalculateMaximumLikelihoodFromVCFCLI.class,
+                    getWorkflowPlan()).siteName(siteName);
+            builder.addArgument(CalculateMaximumLikelihoodFromVCFCLI.VCF, unifiedGenotyperOutput.getAbsolutePath())
+                    .addArgument(CalculateMaximumLikelihoodFromVCFCLI.INTERVALLIST, idCheckIntervalList)
+                    .addArgument(CalculateMaximumLikelihoodFromVCFCLI.SAMPLE,
+                            unifiedGenotyperOutput.getName().replace(".vcf", ""))
+                    .addArgument(CalculateMaximumLikelihoodFromVCFCLI.ECDATA, idCheckExomeChipData)
+                    .addArgument(CalculateMaximumLikelihoodFromVCFCLI.OUTPUT, subjectFinalOutputDir.getAbsolutePath());
+            CondorJob calculateMaximumLikelihoodsFromVCFJob = builder.build();
+            logger.info(calculateMaximumLikelihoodsFromVCFJob.toString());
             graph.addVertex(calculateMaximumLikelihoodsFromVCFJob);
             graph.addEdge(unifiedGenotyperJob, calculateMaximumLikelihoodsFromVCFJob);
 
             // new job
-            CondorJob removeJob = WorkflowJobFactory.createJob(++count, RemoveCLI.class, getWorkflowPlan());
-            removeJob.setSiteName(siteName);
-            removeJob.addArgument(RemoveCLI.FILE, mergeBAMFilesOut.getAbsolutePath());
-            removeJob.addArgument(RemoveCLI.FILE, picardAddOrReplaceReadGroupsOut.getAbsolutePath());
+            builder = WorkflowJobFactory.createJob(++count, RemoveCLI.class, getWorkflowPlan()).siteName(siteName);
+            builder.addArgument(RemoveCLI.FILE, mergeBAMFilesOut.getAbsolutePath()).addArgument(RemoveCLI.FILE,
+                    picardAddOrReplaceReadGroupsOut.getAbsolutePath());
+            CondorJob removeJob = builder.build();
+            logger.info(removeJob.toString());
             graph.addVertex(removeJob);
             graph.addEdge(calculateMaximumLikelihoodsFromVCFJob, removeJob);
 
