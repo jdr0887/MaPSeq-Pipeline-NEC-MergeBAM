@@ -7,10 +7,14 @@
   <reference id="NECMergeBAMWorkflowBeanService" interface="edu.unc.mapseq.workflow.WorkflowBeanService"
     component-name="NECMergeBAMWorkflowBeanService" />
 
-  <bean id="NECMergeBAMMessagingService" class="edu.unc.mapseq.messaging.nec.mergebam.NECMergeBAMMessagingService"
+  <bean id="NECMergeBAMMessageListener" class="edu.unc.mapseq.messaging.nec.mergebam.NECMergeBAMMessageListener">
+    <property name="workflowBeanService" ref="NECMergeBAMWorkflowBeanService" />
+  </bean>
+
+  <bean id="NECMergeBAMMessageService" class="edu.unc.mapseq.messaging.nec.mergebam.NECMergeBAMMessageService"
     init-method="start" destroy-method="stop" activation="eager">
     <property name="connectionFactory" ref="connectionFactory" />
-    <property name="workflowBeanService" ref="NECMergeBAMWorkflowBeanService" />
+    <property name="messageListener" ref="NECMergeBAMMessageListener" />
     <property name="destinationName" value="queue/nec.mergebam" />
   </bean>
 
