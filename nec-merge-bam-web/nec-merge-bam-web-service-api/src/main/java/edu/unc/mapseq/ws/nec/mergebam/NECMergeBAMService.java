@@ -25,7 +25,6 @@ public interface NECMergeBAMService {
     @GET
     @Path("/lookupQuantificationResults/{subject}")
     @WebMethod
-    public NECMergeBAMInfo lookupQuantificationResults(
-            @PathParam("subject") @WebParam(name = "subject") String subject);
+    public NECMergeBAMInfo lookupQuantificationResults(@PathParam("subject") @WebParam(name = "subject") String subject);
 
 }
