@@ -14,9 +14,6 @@ import javax.xml.ws.soap.SOAPBinding;
 
 import org.junit.Test;
 
-import edu.unc.mapseq.ws.nec.mergebam.NECMergeBAMInfo;
-import edu.unc.mapseq.ws.nec.mergebam.NECMergeBAMService;
-
 public class NECMergeBAMServiceTest {
 
     @Test
