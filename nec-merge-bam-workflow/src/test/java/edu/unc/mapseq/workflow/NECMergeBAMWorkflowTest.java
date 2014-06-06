@@ -7,9 +7,10 @@ import java.io.IOException;
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.junit.Test;
-import org.renci.jlrm.condor.ext.CondorDOTExporter;
 import org.renci.jlrm.condor.CondorJob;
+import org.renci.jlrm.condor.CondorJobBuilder;
 import org.renci.jlrm.condor.CondorJobEdge;
+import org.renci.jlrm.condor.ext.CondorDOTExporter;
 import org.renci.jlrm.condor.ext.CondorJobVertexNameProvider;
 
 import edu.unc.mapseq.module.core.RemoveCLI;
@@ -36,48 +37,49 @@ public class NECMergeBAMWorkflowTest {
                 CondorJobEdge.class);
 
         // new job
-        CondorJob mergeBAMFilesJob = new CondorJob(String.format("%s_%d", PicardMergeSAMCLI.class.getSimpleName(),
-                ++count), null);
+        CondorJob mergeBAMFilesJob = new CondorJobBuilder().name(
+                String.format("%s_%d", PicardMergeSAMCLI.class.getSimpleName(), ++count)).build();
         graph.addVertex(mergeBAMFilesJob);
 
         // new job
-        CondorJob picardAddOrReplaceReadGroupsJob = new CondorJob(String.format("%s_%d",
-                PicardAddOrReplaceReadGroupsCLI.class.getSimpleName(), ++count), null);
+        CondorJob picardAddOrReplaceReadGroupsJob = new CondorJobBuilder().name(
+                String.format("%s_%d", PicardAddOrReplaceReadGroupsCLI.class.getSimpleName(), ++count)).build();
         graph.addVertex(picardAddOrReplaceReadGroupsJob);
         graph.addEdge(mergeBAMFilesJob, picardAddOrReplaceReadGroupsJob);
 
         // new job
-        CondorJob picardMarkDuplicatesJob = new CondorJob(String.format("%s_%d",
-                PicardMarkDuplicatesCLI.class.getSimpleName(), ++count), null);
+        CondorJob picardMarkDuplicatesJob = new CondorJobBuilder().name(
+                String.format("%s_%d", PicardMarkDuplicatesCLI.class.getSimpleName(), ++count)).build();
         graph.addVertex(picardMarkDuplicatesJob);
         graph.addEdge(picardAddOrReplaceReadGroupsJob, picardMarkDuplicatesJob);
 
         // new job
-        CondorJob samtoolsIndexJob = new CondorJob(String.format("%s_%d", SAMToolsIndexCLI.class.getSimpleName(),
-                ++count), null);
+        CondorJob samtoolsIndexJob = new CondorJobBuilder().name(
+                String.format("%s_%d", SAMToolsIndexCLI.class.getSimpleName(), ++count)).build();
         graph.addVertex(samtoolsIndexJob);
         graph.addEdge(picardMarkDuplicatesJob, samtoolsIndexJob);
 
         // new job
-        CondorJob samtoolsFlagstatJob = new CondorJob(String.format("%s_%d", SAMToolsFlagstatCLI.class.getSimpleName(),
-                ++count), null);
+        CondorJob samtoolsFlagstatJob = new CondorJobBuilder().name(
+                String.format("%s_%d", SAMToolsFlagstatCLI.class.getSimpleName(), ++count)).build();
         graph.addVertex(samtoolsFlagstatJob);
         graph.addEdge(samtoolsIndexJob, samtoolsFlagstatJob);
 
         // new job
-        CondorJob unifiedGenotyperJob = new CondorJob(String.format("%s_%d",
-                GATKUnifiedGenotyperCLI.class.getSimpleName(), ++count), null);
+        CondorJob unifiedGenotyperJob = new CondorJobBuilder().name(
+                String.format("%s_%d", GATKUnifiedGenotyperCLI.class.getSimpleName(), ++count)).build();
         graph.addVertex(unifiedGenotyperJob);
         graph.addEdge(samtoolsIndexJob, unifiedGenotyperJob);
 
         // new job
-        CondorJob calculateMaximumLikelihoodsFromVCFJob = new CondorJob(String.format("%s_%d",
-                CalculateMaximumLikelihoodFromVCFCLI.class.getSimpleName(), ++count), null);
+        CondorJob calculateMaximumLikelihoodsFromVCFJob = new CondorJobBuilder().name(
+                String.format("%s_%d", CalculateMaximumLikelihoodFromVCFCLI.class.getSimpleName(), ++count)).build();
         graph.addVertex(calculateMaximumLikelihoodsFromVCFJob);
         graph.addEdge(unifiedGenotyperJob, calculateMaximumLikelihoodsFromVCFJob);
 
         // new job
-        CondorJob removeJob = new CondorJob(String.format("%s_%d", RemoveCLI.class.getSimpleName(), ++count), null);
+        CondorJob removeJob = new CondorJobBuilder().name(
+                String.format("%s_%d", RemoveCLI.class.getSimpleName(), ++count)).build();
         graph.addVertex(removeJob);
         graph.addEdge(calculateMaximumLikelihoodsFromVCFJob, removeJob);
 
