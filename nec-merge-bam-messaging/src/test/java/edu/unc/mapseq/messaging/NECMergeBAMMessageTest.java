@@ -1,5 +1,7 @@
 package edu.unc.mapseq.messaging;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.List;
 
@@ -11,10 +13,10 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
 import org.junit.Test;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 
 public class NECMergeBAMMessageTest {
 
@@ -33,31 +35,41 @@ public class NECMergeBAMMessageTest {
             MessageProducer producer = session.createProducer(destination);
             producer.setDeliveryMode(DeliveryMode.PERSISTENT);
 
-            JSONObject parentJSONObject = new JSONObject();
-            parentJSONObject.put("account_name", "rc_renci.svc");
-            JSONArray entityArray = new JSONArray();
+            StringWriter sw = new StringWriter();
 
-            JSONObject entityType = null;
+            JsonGenerator generator = new JsonFactory().createGenerator(sw);
+
+            generator.writeStartObject();
+            generator.writeStringField("accountName", System.getProperty("user.name"));
+            generator.writeArrayFieldStart("entities");
 
             List<Long> idList = Arrays.asList(87443L, 87444L, 87445L, 87446L, 138601L, 138627L, 645578L, 1187302L,
                     1188124L);
 
             for (Long id : idList) {
-                entityType = new JSONObject();
-                entityType.put("entity_type", "HTSFSample");
-                entityType.put("guid", id);
-                entityArray.put(entityType);
+                generator.writeStartObject();
+                generator.writeStringField("entityType", "HTSFSample");
+                generator.writeStringField("guid", id.toString());
+                generator.writeEndObject();
             }
 
-            entityType = new JSONObject();
-            entityType.put("entity_type", "WorkflowRun");
-            entityType.put("name", "merge-bam-test-jdr-1");
-            entityArray.put(entityType);
-            parentJSONObject.put("entities", entityArray);
+            generator.writeStartObject();
+            generator.writeStringField("entityType", "WorkflowRun");
+            generator.writeStringField("name", "merge-bam-test-jdr-1");
+            generator.writeEndObject();
 
-            System.out.println(parentJSONObject.toString());
-            producer.send(session.createTextMessage(parentJSONObject.toString()));
-        } catch (JSONException | JMSException e) {
+            generator.writeEndArray();
+            generator.writeEndObject();
+
+            generator.flush();
+            generator.close();
+
+            sw.flush();
+            sw.close();
+
+            producer.send(session.createTextMessage(sw.toString()));
+
+        } catch (JMSException | IOException e) {
             e.printStackTrace();
         } finally {
             try {
