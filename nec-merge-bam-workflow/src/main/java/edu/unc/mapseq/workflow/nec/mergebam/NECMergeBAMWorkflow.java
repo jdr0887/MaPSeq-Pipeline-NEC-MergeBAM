@@ -26,6 +26,7 @@ import edu.unc.mapseq.dao.model.HTSFSample;
 import edu.unc.mapseq.dao.model.MimeType;
 import edu.unc.mapseq.dao.model.SequencerRun;
 import edu.unc.mapseq.dao.model.Workflow;
+import edu.unc.mapseq.dao.model.WorkflowRun;
 import edu.unc.mapseq.module.core.RemoveCLI;
 import edu.unc.mapseq.module.gatk.GATKDownsamplingType;
 import edu.unc.mapseq.module.gatk.GATKPhoneHomeType;
@@ -101,6 +102,8 @@ public class NECMergeBAMWorkflow extends AbstractWorkflow {
 
             Set<String> subjectNameSet = new HashSet<String>();
 
+            WorkflowRun workflowRun = getWorkflowPlan().getWorkflowRun();
+            
             for (HTSFSample htsfSample : htsfSampleSet) {
 
                 if ("Undetermined".equals(htsfSample.getBarcode())) {
@@ -109,18 +112,19 @@ public class NECMergeBAMWorkflow extends AbstractWorkflow {
 
                 logger.info("htsfSample: {}", htsfSample.toString());
 
-                Set<EntityAttribute> attributeSet = htsfSample.getAttributes();
-                Iterator<EntityAttribute> attributeIter = attributeSet.iterator();
-                while (attributeIter.hasNext()) {
-                    EntityAttribute attribute = attributeIter.next();
-                    String name = attribute.getName();
-                    String value = attribute.getValue();
-                    if ("subjectName".equals(name)) {
-                        subjectNameSet.add(value);
-                        break;
+                Set<EntityAttribute> attributeSet = workflowRun.getAttributes();
+                if (attributeSet != null && !attributeSet.isEmpty()) {
+                    Iterator<EntityAttribute> attributeIter = attributeSet.iterator();
+                    while (attributeIter.hasNext()) {
+                        EntityAttribute attribute = attributeIter.next();
+                        String name = attribute.getName();
+                        String value = attribute.getValue();
+                        if ("subjectName".equals(name)) {
+                            subjectNameSet.add(value);
+                            break;
+                        }
                     }
                 }
-
             }
 
             Set<String> synchronizedSubjectNameSet = Collections.synchronizedSet(subjectNameSet);
