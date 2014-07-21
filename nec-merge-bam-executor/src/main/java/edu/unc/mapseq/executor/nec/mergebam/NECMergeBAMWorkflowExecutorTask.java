@@ -47,7 +47,12 @@ public class NECMergeBAMWorkflowExecutorTask extends TimerTask {
         WorkflowPlanDAO workflowPlanDAO = this.workflowBeanService.getMaPSeqDAOBean().getWorkflowPlanDAO();
 
         try {
-            Workflow workflow = workflowDAO.findByName("NECMergeBAM");
+            List<Workflow> workflowList = workflowDAO.findByName("NECMergeBAM");
+            if (workflowList == null || (workflowList != null && workflowList.isEmpty())) {
+                logger.error("No Workflow Found: {}", "NECMergeBAM");
+                return;
+            }
+            Workflow workflow = workflowList.get(0);
             List<WorkflowPlan> workflowPlanList = workflowPlanDAO.findEnqueued(workflow.getId());
 
             if (workflowPlanList != null && workflowPlanList.size() > 0) {

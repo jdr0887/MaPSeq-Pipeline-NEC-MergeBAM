@@ -95,7 +95,7 @@ public class NECMergeBAMWorkflow extends AbstractWorkflow {
             Workflow alignmentWorkflow = null;
             try {
                 alignmentWorkflow = getWorkflowBeanService().getMaPSeqDAOBean().getWorkflowDAO()
-                        .findByName("NECAlignment");
+                        .findByName("NECAlignment").get(0);
             } catch (MaPSeqDAOException e1) {
                 e1.printStackTrace();
             }
