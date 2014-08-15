@@ -20,13 +20,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import edu.unc.mapseq.dao.MaPSeqDAOException;
-import edu.unc.mapseq.dao.model.EntityAttribute;
+import edu.unc.mapseq.dao.model.Attribute;
 import edu.unc.mapseq.dao.model.FileData;
-import edu.unc.mapseq.dao.model.HTSFSample;
 import edu.unc.mapseq.dao.model.MimeType;
-import edu.unc.mapseq.dao.model.SequencerRun;
+import edu.unc.mapseq.dao.model.Sample;
 import edu.unc.mapseq.dao.model.Workflow;
 import edu.unc.mapseq.dao.model.WorkflowRun;
+import edu.unc.mapseq.dao.model.WorkflowRunAttempt;
 import edu.unc.mapseq.module.core.RemoveCLI;
 import edu.unc.mapseq.module.gatk.GATKDownsamplingType;
 import edu.unc.mapseq.module.gatk.GATKPhoneHomeType;
@@ -41,10 +41,10 @@ import edu.unc.mapseq.module.samtools.SAMToolsFlagstatCLI;
 import edu.unc.mapseq.module.samtools.SAMToolsIndexCLI;
 import edu.unc.mapseq.workflow.WorkflowException;
 import edu.unc.mapseq.workflow.WorkflowUtil;
-import edu.unc.mapseq.workflow.impl.AbstractWorkflow;
+import edu.unc.mapseq.workflow.impl.AbstractSampleWorkflow;
 import edu.unc.mapseq.workflow.impl.WorkflowJobFactory;
 
-public class NECMergeBAMWorkflow extends AbstractWorkflow {
+public class NECMergeBAMWorkflow extends AbstractSampleWorkflow {
 
     private final Logger logger = LoggerFactory.getLogger(NECMergeBAMWorkflow.class);
 
@@ -73,8 +73,8 @@ public class NECMergeBAMWorkflow extends AbstractWorkflow {
 
         int count = 0;
 
-        Set<HTSFSample> htsfSampleSet = getAggregateHTSFSampleSet();
-        logger.info("htsfSampleSet.size(): {}", htsfSampleSet.size());
+        Set<Sample> sampleSet = getAggregatedSamples();
+        logger.info("sampleSet.size(): {}", sampleSet.size());
 
         String siteName = getWorkflowBeanService().getAttributes().get("siteName");
         String saHome = getWorkflowBeanService().getAttributes().get("sequenceAnalysisHome");
@@ -102,21 +102,22 @@ public class NECMergeBAMWorkflow extends AbstractWorkflow {
 
             Set<String> subjectNameSet = new HashSet<String>();
 
-            WorkflowRun workflowRun = getWorkflowPlan().getWorkflowRun();
-            
-            for (HTSFSample htsfSample : htsfSampleSet) {
+            WorkflowRunAttempt attempt = getWorkflowRunAttempt();
+            WorkflowRun workflowRun = attempt.getWorkflowRun();
 
-                if ("Undetermined".equals(htsfSample.getBarcode())) {
+            for (Sample sample : sampleSet) {
+
+                if ("Undetermined".equals(sample.getBarcode())) {
                     continue;
                 }
 
-                logger.info("htsfSample: {}", htsfSample.toString());
+                logger.info(sample.toString());
 
-                Set<EntityAttribute> attributeSet = workflowRun.getAttributes();
+                Set<Attribute> attributeSet = workflowRun.getAttributes();
                 if (attributeSet != null && !attributeSet.isEmpty()) {
-                    Iterator<EntityAttribute> attributeIter = attributeSet.iterator();
+                    Iterator<Attribute> attributeIter = attributeSet.iterator();
                     while (attributeIter.hasNext()) {
-                        EntityAttribute attribute = attributeIter.next();
+                        Attribute attribute = attributeIter.next();
                         String name = attribute.getName();
                         String value = attribute.getValue();
                         if ("subjectName".equals(name)) {
@@ -152,19 +153,17 @@ public class NECMergeBAMWorkflow extends AbstractWorkflow {
 
             List<File> bamFileList = new ArrayList<File>();
 
-            for (HTSFSample htsfSample : htsfSampleSet) {
+            for (Sample sample : sampleSet) {
 
-                if ("Undetermined".equals(htsfSample.getBarcode())) {
+                if ("Undetermined".equals(sample.getBarcode())) {
                     continue;
                 }
 
-                SequencerRun sequencerRun = htsfSample.getSequencerRun();
-                File outputDirectory = createOutputDirectory(sequencerRun.getName(), htsfSample,
-                        getName().replace("MergeBAM", ""), getVersion());
+                File outputDirectory = new File(sample.getOutputDirectory());
 
                 File bamFile = null;
 
-                Set<FileData> fileDataSet = htsfSample.getFileDatas();
+                Set<FileData> fileDataSet = sample.getFileDatas();
 
                 // 1st attempt to find bam file
                 List<File> possibleVCFFileList = WorkflowUtil.lookupFileByJobAndMimeTypeAndWorkflowId(fileDataSet,
@@ -194,8 +193,8 @@ public class NECMergeBAMWorkflow extends AbstractWorkflow {
             }
 
             // new job
-            CondorJobBuilder builder = WorkflowJobFactory
-                    .createJob(++count, PicardMergeSAMCLI.class, getWorkflowPlan()).siteName(siteName);
+            CondorJobBuilder builder = WorkflowJobFactory.createJob(++count, PicardMergeSAMCLI.class, attempt)
+                    .siteName(siteName);
             File mergeBAMFilesOut = new File(subjectFinalOutputDir, String.format("%s.merged.bam", subjectName));
             builder.addArgument(PicardMergeSAMCLI.SORTORDER, "unsorted").addArgument(PicardMergeSAMCLI.OUTPUT,
                     mergeBAMFilesOut.getAbsolutePath());
@@ -208,8 +207,8 @@ public class NECMergeBAMWorkflow extends AbstractWorkflow {
             graph.addVertex(mergeBAMFilesJob);
 
             // new job
-            builder = WorkflowJobFactory.createJob(++count, PicardAddOrReplaceReadGroupsCLI.class, getWorkflowPlan())
-                    .siteName(siteName);
+            builder = WorkflowJobFactory.createJob(++count, PicardAddOrReplaceReadGroupsCLI.class, attempt).siteName(
+                    siteName);
             File picardAddOrReplaceReadGroupsOut = new File(subjectFinalOutputDir, mergeBAMFilesOut.getName().replace(
                     ".bam", ".rg.bam"));
             builder.addArgument(PicardAddOrReplaceReadGroupsCLI.INPUT, mergeBAMFilesOut.getAbsolutePath())
@@ -229,8 +228,7 @@ public class NECMergeBAMWorkflow extends AbstractWorkflow {
             graph.addEdge(mergeBAMFilesJob, picardAddOrReplaceReadGroupsJob);
 
             // new job
-            builder = WorkflowJobFactory.createJob(++count, PicardMarkDuplicatesCLI.class, getWorkflowPlan()).siteName(
-                    siteName);
+            builder = WorkflowJobFactory.createJob(++count, PicardMarkDuplicatesCLI.class, attempt).siteName(siteName);
             File picardMarkDuplicatesOutput = new File(subjectFinalOutputDir, picardAddOrReplaceReadGroupsOut.getName()
                     .replace(".bam", ".deduped.bam"));
             File picardMarkDuplicatesMetrics = new File(subjectFinalOutputDir, picardMarkDuplicatesOutput.getName()
@@ -244,8 +242,7 @@ public class NECMergeBAMWorkflow extends AbstractWorkflow {
             graph.addEdge(picardAddOrReplaceReadGroupsJob, picardMarkDuplicatesJob);
 
             // new job
-            builder = WorkflowJobFactory.createJob(++count, SAMToolsIndexCLI.class, getWorkflowPlan()).siteName(
-                    siteName);
+            builder = WorkflowJobFactory.createJob(++count, SAMToolsIndexCLI.class, attempt).siteName(siteName);
             File samtoolsIndexOutput = new File(subjectFinalOutputDir, picardMarkDuplicatesOutput.getName().replace(
                     ".bam", ".bai"));
             builder.addArgument(SAMToolsIndexCLI.INPUT, picardMarkDuplicatesOutput.getAbsolutePath()).addArgument(
@@ -256,8 +253,7 @@ public class NECMergeBAMWorkflow extends AbstractWorkflow {
             graph.addEdge(picardMarkDuplicatesJob, samtoolsIndexJob);
 
             // new job
-            builder = WorkflowJobFactory.createJob(++count, SAMToolsFlagstatCLI.class, getWorkflowPlan()).siteName(
-                    siteName);
+            builder = WorkflowJobFactory.createJob(++count, SAMToolsFlagstatCLI.class, attempt).siteName(siteName);
             File samtoolsFlagstatOutput = new File(subjectFinalOutputDir, picardMarkDuplicatesOutput.getName().replace(
                     ".bam", ".flagstat"));
             builder.addArgument(SAMToolsFlagstatCLI.INPUT, picardMarkDuplicatesOutput.getAbsolutePath()).addArgument(
@@ -267,8 +263,8 @@ public class NECMergeBAMWorkflow extends AbstractWorkflow {
             graph.addVertex(samtoolsFlagstatJob);
             graph.addEdge(samtoolsIndexJob, samtoolsFlagstatJob);
 
-            builder = WorkflowJobFactory.createJob(++count, GATKUnifiedGenotyperCLI.class, getWorkflowPlan())
-                    .siteName(siteName).numberOfProcessors(4);
+            builder = WorkflowJobFactory.createJob(++count, GATKUnifiedGenotyperCLI.class, attempt).siteName(siteName)
+                    .numberOfProcessors(4);
             File unifiedGenotyperOutput = new File(subjectFinalOutputDir, picardMarkDuplicatesOutput.getName().replace(
                     ".bam", ".vcf"));
             File unifiedGenotyperMetrics = new File(subjectFinalOutputDir, picardMarkDuplicatesOutput.getName()
@@ -301,8 +297,8 @@ public class NECMergeBAMWorkflow extends AbstractWorkflow {
             graph.addEdge(samtoolsIndexJob, unifiedGenotyperJob);
 
             // new job
-            builder = WorkflowJobFactory.createJob(++count, CalculateMaximumLikelihoodFromVCFCLI.class,
-                    getWorkflowPlan()).siteName(siteName);
+            builder = WorkflowJobFactory.createJob(++count, CalculateMaximumLikelihoodFromVCFCLI.class, attempt)
+                    .siteName(siteName);
             builder.addArgument(CalculateMaximumLikelihoodFromVCFCLI.VCF, unifiedGenotyperOutput.getAbsolutePath())
                     .addArgument(CalculateMaximumLikelihoodFromVCFCLI.INTERVALLIST, idCheckIntervalList)
                     .addArgument(CalculateMaximumLikelihoodFromVCFCLI.SAMPLE,
@@ -315,7 +311,7 @@ public class NECMergeBAMWorkflow extends AbstractWorkflow {
             graph.addEdge(unifiedGenotyperJob, calculateMaximumLikelihoodsFromVCFJob);
 
             // new job
-            builder = WorkflowJobFactory.createJob(++count, RemoveCLI.class, getWorkflowPlan()).siteName(siteName);
+            builder = WorkflowJobFactory.createJob(++count, RemoveCLI.class, attempt).siteName(siteName);
             builder.addArgument(RemoveCLI.FILE, mergeBAMFilesOut.getAbsolutePath()).addArgument(RemoveCLI.FILE,
                     picardAddOrReplaceReadGroupsOut.getAbsolutePath());
             CondorJob removeJob = builder.build();
