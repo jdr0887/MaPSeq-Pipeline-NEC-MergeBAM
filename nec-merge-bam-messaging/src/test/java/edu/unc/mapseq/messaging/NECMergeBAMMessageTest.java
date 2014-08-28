@@ -40,7 +40,6 @@ public class NECMergeBAMMessageTest {
             JsonGenerator generator = new JsonFactory().createGenerator(sw);
 
             generator.writeStartObject();
-            generator.writeStringField("accountName", System.getProperty("user.name"));
             generator.writeArrayFieldStart("entities");
 
             List<Long> idList = Arrays.asList(87443L, 87444L, 87445L, 87446L, 138601L, 138627L, 645578L, 1187302L,
@@ -48,8 +47,8 @@ public class NECMergeBAMMessageTest {
 
             for (Long id : idList) {
                 generator.writeStartObject();
-                generator.writeStringField("entityType", "HTSFSample");
-                generator.writeStringField("guid", id.toString());
+                generator.writeStringField("entityType", "Sample");
+                generator.writeStringField("id", id.toString());
                 generator.writeEndObject();
             }
 
