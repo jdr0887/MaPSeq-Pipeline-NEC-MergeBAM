@@ -159,7 +159,9 @@ public class NECMergeBAMWorkflow extends AbstractSampleWorkflow {
                     continue;
                 }
 
-                File outputDirectory = new File(sample.getOutputDirectory());
+                File outputDirectory = new File(sample.getOutputDirectory(), getName());
+                File tmpDirectory = new File(outputDirectory, "tmp");
+                tmpDirectory.mkdirs();
 
                 File bamFile = null;
 
