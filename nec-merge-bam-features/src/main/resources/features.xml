@@ -1,4 +1,4 @@
-<features name="mapseq-pipeline-nec-merge-bam-${project.version}">
+<features name="mapseq-pipeline-nec-merge-bam-${project.version}" xmlns="http://karaf.apache.org/xmlns/features/v1.2.0">
 
   <feature name="mapseq-pipeline-nec-merge-bam" version="${project.version}" resolver="(obr)">
     <bundle>mvn:edu.unc.mapseq.pipelines.nec-merge-bam/nec-merge-bam-workflow/${project.version}</bundle>
