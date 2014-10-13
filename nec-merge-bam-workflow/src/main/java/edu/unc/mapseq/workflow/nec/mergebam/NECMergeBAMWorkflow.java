@@ -195,7 +195,7 @@ public class NECMergeBAMWorkflow extends AbstractSampleWorkflow {
             }
 
             // new job
-            CondorJobBuilder builder = WorkflowJobFactory.createJob(++count, PicardMergeSAMCLI.class, attempt)
+            CondorJobBuilder builder = WorkflowJobFactory.createJob(++count, PicardMergeSAMCLI.class, attempt.getId())
                     .siteName(siteName);
             File mergeBAMFilesOut = new File(subjectFinalOutputDir, String.format("%s.merged.bam", subjectName));
             builder.addArgument(PicardMergeSAMCLI.SORTORDER, "unsorted").addArgument(PicardMergeSAMCLI.OUTPUT,
@@ -209,8 +209,8 @@ public class NECMergeBAMWorkflow extends AbstractSampleWorkflow {
             graph.addVertex(mergeBAMFilesJob);
 
             // new job
-            builder = WorkflowJobFactory.createJob(++count, PicardAddOrReplaceReadGroupsCLI.class, attempt).siteName(
-                    siteName);
+            builder = WorkflowJobFactory.createJob(++count, PicardAddOrReplaceReadGroupsCLI.class, attempt.getId())
+                    .siteName(siteName);
             File picardAddOrReplaceReadGroupsOut = new File(subjectFinalOutputDir, mergeBAMFilesOut.getName().replace(
                     ".bam", ".rg.bam"));
             builder.addArgument(PicardAddOrReplaceReadGroupsCLI.INPUT, mergeBAMFilesOut.getAbsolutePath())
@@ -230,7 +230,8 @@ public class NECMergeBAMWorkflow extends AbstractSampleWorkflow {
             graph.addEdge(mergeBAMFilesJob, picardAddOrReplaceReadGroupsJob);
 
             // new job
-            builder = WorkflowJobFactory.createJob(++count, PicardMarkDuplicatesCLI.class, attempt).siteName(siteName);
+            builder = WorkflowJobFactory.createJob(++count, PicardMarkDuplicatesCLI.class, attempt.getId()).siteName(
+                    siteName);
             File picardMarkDuplicatesOutput = new File(subjectFinalOutputDir, picardAddOrReplaceReadGroupsOut.getName()
                     .replace(".bam", ".deduped.bam"));
             File picardMarkDuplicatesMetrics = new File(subjectFinalOutputDir, picardMarkDuplicatesOutput.getName()
@@ -244,7 +245,7 @@ public class NECMergeBAMWorkflow extends AbstractSampleWorkflow {
             graph.addEdge(picardAddOrReplaceReadGroupsJob, picardMarkDuplicatesJob);
 
             // new job
-            builder = WorkflowJobFactory.createJob(++count, SAMToolsIndexCLI.class, attempt).siteName(siteName);
+            builder = WorkflowJobFactory.createJob(++count, SAMToolsIndexCLI.class, attempt.getId()).siteName(siteName);
             File samtoolsIndexOutput = new File(subjectFinalOutputDir, picardMarkDuplicatesOutput.getName().replace(
                     ".bam", ".bai"));
             builder.addArgument(SAMToolsIndexCLI.INPUT, picardMarkDuplicatesOutput.getAbsolutePath()).addArgument(
@@ -255,7 +256,8 @@ public class NECMergeBAMWorkflow extends AbstractSampleWorkflow {
             graph.addEdge(picardMarkDuplicatesJob, samtoolsIndexJob);
 
             // new job
-            builder = WorkflowJobFactory.createJob(++count, SAMToolsFlagstatCLI.class, attempt).siteName(siteName);
+            builder = WorkflowJobFactory.createJob(++count, SAMToolsFlagstatCLI.class, attempt.getId()).siteName(
+                    siteName);
             File samtoolsFlagstatOutput = new File(subjectFinalOutputDir, picardMarkDuplicatesOutput.getName().replace(
                     ".bam", ".flagstat"));
             builder.addArgument(SAMToolsFlagstatCLI.INPUT, picardMarkDuplicatesOutput.getAbsolutePath()).addArgument(
@@ -265,8 +267,8 @@ public class NECMergeBAMWorkflow extends AbstractSampleWorkflow {
             graph.addVertex(samtoolsFlagstatJob);
             graph.addEdge(samtoolsIndexJob, samtoolsFlagstatJob);
 
-            builder = WorkflowJobFactory.createJob(++count, GATKUnifiedGenotyperCLI.class, attempt).siteName(siteName)
-                    .numberOfProcessors(4);
+            builder = WorkflowJobFactory.createJob(++count, GATKUnifiedGenotyperCLI.class, attempt.getId())
+                    .siteName(siteName).numberOfProcessors(4);
             File unifiedGenotyperOutput = new File(subjectFinalOutputDir, picardMarkDuplicatesOutput.getName().replace(
                     ".bam", ".vcf"));
             File unifiedGenotyperMetrics = new File(subjectFinalOutputDir, picardMarkDuplicatesOutput.getName()
@@ -299,8 +301,8 @@ public class NECMergeBAMWorkflow extends AbstractSampleWorkflow {
             graph.addEdge(samtoolsIndexJob, unifiedGenotyperJob);
 
             // new job
-            builder = WorkflowJobFactory.createJob(++count, CalculateMaximumLikelihoodFromVCFCLI.class, attempt)
-                    .siteName(siteName);
+            builder = WorkflowJobFactory
+                    .createJob(++count, CalculateMaximumLikelihoodFromVCFCLI.class, attempt.getId()).siteName(siteName);
             builder.addArgument(CalculateMaximumLikelihoodFromVCFCLI.VCF, unifiedGenotyperOutput.getAbsolutePath())
                     .addArgument(CalculateMaximumLikelihoodFromVCFCLI.INTERVALLIST, idCheckIntervalList)
                     .addArgument(CalculateMaximumLikelihoodFromVCFCLI.SAMPLE,
@@ -313,7 +315,7 @@ public class NECMergeBAMWorkflow extends AbstractSampleWorkflow {
             graph.addEdge(unifiedGenotyperJob, calculateMaximumLikelihoodsFromVCFJob);
 
             // new job
-            builder = WorkflowJobFactory.createJob(++count, RemoveCLI.class, attempt).siteName(siteName);
+            builder = WorkflowJobFactory.createJob(++count, RemoveCLI.class, attempt.getId()).siteName(siteName);
             builder.addArgument(RemoveCLI.FILE, mergeBAMFilesOut.getAbsolutePath()).addArgument(RemoveCLI.FILE,
                     picardAddOrReplaceReadGroupsOut.getAbsolutePath());
             CondorJob removeJob = builder.build();
