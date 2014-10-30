@@ -2,13 +2,13 @@
   <parent>
     <groupId>edu.unc.mapseq.pipelines.nec-merge-bam</groupId>
     <artifactId>nec-merge-bam-web</artifactId>
-    <version>0.5.15</version>
+    <version>0.5.16-SNAPSHOT</version>
   </parent>
   <name>MaPSeq :: Pipelines :: NEC Merge BAM :: Web :: Web Service API</name>
   <modelVersion>4.0.0</modelVersion>
   <groupId>edu.unc.mapseq.pipelines.nec-merge-bam.nec-merge-bam-web</groupId>
   <artifactId>nec-merge-bam-web-service-api</artifactId>
-  <version>0.5.15</version>
+  <version>0.5.16-SNAPSHOT</version>
   <packaging>bundle</packaging>
   <dependencies>
     <dependency>
