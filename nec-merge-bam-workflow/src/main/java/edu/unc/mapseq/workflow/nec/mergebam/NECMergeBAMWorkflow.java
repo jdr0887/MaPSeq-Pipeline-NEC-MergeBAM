@@ -40,9 +40,9 @@ import edu.unc.mapseq.module.picard.PicardSortOrderType;
 import edu.unc.mapseq.module.samtools.SAMToolsFlagstatCLI;
 import edu.unc.mapseq.module.samtools.SAMToolsIndexCLI;
 import edu.unc.mapseq.workflow.WorkflowException;
-import edu.unc.mapseq.workflow.WorkflowUtil;
 import edu.unc.mapseq.workflow.impl.AbstractSampleWorkflow;
 import edu.unc.mapseq.workflow.impl.WorkflowJobFactory;
+import edu.unc.mapseq.workflow.impl.WorkflowUtil;
 
 public class NECMergeBAMWorkflow extends AbstractSampleWorkflow {
 
@@ -163,18 +163,11 @@ public class NECMergeBAMWorkflow extends AbstractSampleWorkflow {
                 File tmpDirectory = new File(outputDirectory, "tmp");
                 tmpDirectory.mkdirs();
 
-                File bamFile = null;
-
                 Set<FileData> fileDataSet = sample.getFileDatas();
 
-                // 1st attempt to find bam file
-                List<File> possibleVCFFileList = WorkflowUtil.lookupFileByJobAndMimeTypeAndWorkflowId(fileDataSet,
-                        getWorkflowBeanService().getMaPSeqDAOBean(), PicardAddOrReplaceReadGroups.class,
-                        MimeType.APPLICATION_BAM, alignmentWorkflow.getId());
-
-                if (possibleVCFFileList != null && possibleVCFFileList.size() > 0) {
-                    bamFile = possibleVCFFileList.get(0);
-                }
+                File bamFile = WorkflowUtil.findFileByJobAndMimeTypeAndWorkflowId(getWorkflowBeanService()
+                        .getMaPSeqDAOBean(), fileDataSet, PicardAddOrReplaceReadGroups.class, MimeType.APPLICATION_BAM,
+                        alignmentWorkflow.getId());
 
                 // 2nd attempt to find bam file
                 if (bamFile == null) {
