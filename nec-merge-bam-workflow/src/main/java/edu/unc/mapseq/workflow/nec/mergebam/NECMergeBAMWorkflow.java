@@ -25,7 +25,6 @@ import edu.unc.mapseq.dao.model.FileData;
 import edu.unc.mapseq.dao.model.MimeType;
 import edu.unc.mapseq.dao.model.Sample;
 import edu.unc.mapseq.dao.model.Workflow;
-import edu.unc.mapseq.dao.model.WorkflowRun;
 import edu.unc.mapseq.dao.model.WorkflowRunAttempt;
 import edu.unc.mapseq.module.core.RemoveCLI;
 import edu.unc.mapseq.module.gatk.GATKDownsamplingType;
@@ -86,8 +85,7 @@ public class NECMergeBAMWorkflow extends AbstractSampleWorkflow {
         String idCheckIntervalList = getWorkflowBeanService().getAttributes().get("idCheckIntervalList");
         String idCheckExomeChipData = getWorkflowBeanService().getAttributes().get("idCheckExomeChipData");
 
-        File projectDirectory = new File(saHome, "NIDA");
-        File cohortDirectory = new File(projectDirectory, "UCSF");
+        File cohortDirectory = new File(saHome, "NEC");
         File subjectParentDirectory = new File(cohortDirectory, "subjects");
 
         try {
@@ -103,7 +101,6 @@ public class NECMergeBAMWorkflow extends AbstractSampleWorkflow {
             Set<String> subjectNameSet = new HashSet<String>();
 
             WorkflowRunAttempt attempt = getWorkflowRunAttempt();
-            WorkflowRun workflowRun = attempt.getWorkflowRun();
 
             for (Sample sample : sampleSet) {
 
@@ -113,7 +110,7 @@ public class NECMergeBAMWorkflow extends AbstractSampleWorkflow {
 
                 logger.info(sample.toString());
 
-                Set<Attribute> attributeSet = workflowRun.getAttributes();
+                Set<Attribute> attributeSet = sample.getAttributes();
                 if (attributeSet != null && !attributeSet.isEmpty()) {
                     Iterator<Attribute> attributeIter = attributeSet.iterator();
                     while (attributeIter.hasNext()) {
@@ -159,19 +156,17 @@ public class NECMergeBAMWorkflow extends AbstractSampleWorkflow {
                     continue;
                 }
 
-                File outputDirectory = new File(sample.getOutputDirectory(), getName());
-                File tmpDirectory = new File(outputDirectory, "tmp");
-                tmpDirectory.mkdirs();
-
                 Set<FileData> fileDataSet = sample.getFileDatas();
 
                 File bamFile = WorkflowUtil.findFileByJobAndMimeTypeAndWorkflowId(getWorkflowBeanService()
                         .getMaPSeqDAOBean(), fileDataSet, PicardAddOrReplaceReadGroups.class, MimeType.APPLICATION_BAM,
                         alignmentWorkflow.getId());
 
+                File sampleNECAlignmentOutputDirectory = new File(sample.getOutputDirectory(), "NECAlignment");
+
                 // 2nd attempt to find bam file
                 if (bamFile == null) {
-                    for (File f : outputDirectory.listFiles()) {
+                    for (File f : sampleNECAlignmentOutputDirectory.listFiles()) {
                         if (f.getName().endsWith(".fixed-rg.bam")) {
                             bamFile = f;
                             break;
