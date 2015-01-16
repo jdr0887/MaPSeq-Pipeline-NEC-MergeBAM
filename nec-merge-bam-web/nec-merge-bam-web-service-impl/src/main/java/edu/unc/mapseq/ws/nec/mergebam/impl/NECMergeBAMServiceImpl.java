@@ -24,8 +24,7 @@ public class NECMergeBAMServiceImpl implements NECMergeBAMService {
 
         NECMergeBAMInfo ret = new NECMergeBAMInfo();
 
-        File subjectFinalDir = new File(String.format("/proj/renci/sequence_analysis/NIDA/UCSF/subjects/%s/final",
-                subject));
+        File subjectFinalDir = new File(String.format("/proj/renci/sequence_analysis/NEC/subjects/%s/final", subject));
         logger.debug("subjectFinalDir file is: {}", subjectFinalDir.getAbsolutePath());
 
         if (!subjectFinalDir.exists()) {
