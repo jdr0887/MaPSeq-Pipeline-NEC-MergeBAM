@@ -21,11 +21,11 @@ public class NECMergeBAMServiceTest {
         QName serviceQName = new QName("http://mergebam.nec.ws.mapseq.unc.edu", "NECMergeBAMService");
         QName portQName = new QName("http://mergebam.nec.ws.mapseq.unc.edu", "NECMergeBAMPort");
         Service service = Service.create(serviceQName);
-        String host = "biodev2.its.unc.edu";
+        String host = "152.19.198.146";
         service.addPort(portQName, SOAPBinding.SOAP11HTTP_MTOM_BINDING,
                 String.format("http://%s:%d/cxf/NECMergeBAMService", host, 8181));
         NECMergeBAMService mergeBAMService = service.getPort(NECMergeBAMService.class);
-        NECMergeBAMInfo results = mergeBAMService.lookupQuantificationResults("000863Sb");
+        NECMergeBAMInfo results = mergeBAMService.lookupQuantificationResults("012375Sb");
         try {
             JAXBContext context = JAXBContext.newInstance(NECMergeBAMInfo.class);
             Marshaller m = context.createMarshaller();
