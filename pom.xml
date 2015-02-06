@@ -9,7 +9,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>edu.unc.mapseq.pipelines</groupId>
   <artifactId>nec-merge-bam</artifactId>
-  <version>0.5.34-SNAPSHOT</version>
+  <version>0.5.34</version>
   <packaging>pom</packaging>
   <issueManagement>
     <system>GitHub Issues</system>
@@ -26,19 +26,19 @@
     <url>https://github.com/jdr0887/MaPSeq-Pipeline-NEC-MergeBAM</url>
     <developerConnection>scm:git:git@github.com:jdr0887/MaPSeq-Pipeline-NEC-MergeBAM.git</developerConnection>
     <connection>scm:git:git@github.com:jdr0887/MaPSeq-Pipeline-NEC-MergeBAM.git</connection>
-    <tag>HEAD</tag>
+    <tag>nec-merge-bam-0.5.34</tag>
   </scm>
   <dependencyManagement>
     <dependencies>
       <dependency>
 	<groupId>edu.unc.mapseq.pipelines.nec-merge-bam.nec-merge-bam-web</groupId>
 	<artifactId>nec-merge-bam-web-service-api</artifactId>
-	<version>0.5.34-SNAPSHOT</version>	
+	<version>0.5.34</version>	
       </dependency>
       <dependency>
       	<groupId>edu.unc.mapseq.pipelines.nec-merge-bam</groupId>
       	<artifactId>nec-merge-bam-workflow</artifactId>
-      	<version>0.5.34-SNAPSHOT</version>
+      	<version>0.5.34</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
