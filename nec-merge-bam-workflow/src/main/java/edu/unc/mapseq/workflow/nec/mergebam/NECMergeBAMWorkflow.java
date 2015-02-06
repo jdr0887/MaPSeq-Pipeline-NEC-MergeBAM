@@ -25,6 +25,7 @@ import edu.unc.mapseq.dao.model.FileData;
 import edu.unc.mapseq.dao.model.MimeType;
 import edu.unc.mapseq.dao.model.Sample;
 import edu.unc.mapseq.dao.model.Workflow;
+import edu.unc.mapseq.dao.model.WorkflowRun;
 import edu.unc.mapseq.dao.model.WorkflowRunAttempt;
 import edu.unc.mapseq.module.core.RemoveCLI;
 import edu.unc.mapseq.module.gatk.GATKDownsamplingType;
@@ -90,17 +91,10 @@ public class NECMergeBAMWorkflow extends AbstractSampleWorkflow {
 
         try {
 
-            Workflow alignmentWorkflow = null;
-            try {
-                alignmentWorkflow = getWorkflowBeanService().getMaPSeqDAOBean().getWorkflowDAO()
-                        .findByName("NECAlignment").get(0);
-            } catch (MaPSeqDAOException e1) {
-                e1.printStackTrace();
-            }
-
             Set<String> subjectNameSet = new HashSet<String>();
 
             WorkflowRunAttempt attempt = getWorkflowRunAttempt();
+            WorkflowRun workflowRun = attempt.getWorkflowRun();
 
             for (Sample sample : sampleSet) {
 
@@ -149,6 +143,14 @@ public class NECMergeBAMWorkflow extends AbstractSampleWorkflow {
             subjectFinalOutputDir.mkdirs();
 
             List<File> bamFileList = new ArrayList<File>();
+
+            Workflow alignmentWorkflow = null;
+            try {
+                alignmentWorkflow = getWorkflowBeanService().getMaPSeqDAOBean().getWorkflowDAO()
+                        .findByName("NECAlignment").get(0);
+            } catch (MaPSeqDAOException e1) {
+                e1.printStackTrace();
+            }
 
             for (Sample sample : sampleSet) {
 
