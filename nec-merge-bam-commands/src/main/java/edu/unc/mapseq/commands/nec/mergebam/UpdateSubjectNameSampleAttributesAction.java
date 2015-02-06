@@ -52,8 +52,6 @@ public class UpdateSubjectNameSampleAttributesAction extends AbstractAction {
 
                 for (Flowcell flowcell : flowcells) {
 
-                    logger.info(flowcell.toString());
-
                     List<Sample> samples = sampleDAO.findByFlowcellId(flowcell.getId());
 
                     if (samples != null && !samples.isEmpty()) {
@@ -63,8 +61,6 @@ public class UpdateSubjectNameSampleAttributesAction extends AbstractAction {
                             if ("Undetermined".equals(sample.getBarcode())) {
                                 continue;
                             }
-
-                            logger.info(sample.toString());
 
                             String subjectName = null;
 
@@ -80,6 +76,8 @@ public class UpdateSubjectNameSampleAttributesAction extends AbstractAction {
                                 continue;
                             }
 
+                            logger.info(flowcell.toString());
+                            logger.info(sample.toString());
                             logger.info("subjectName: {}", subjectName);
 
                             if (!dryRun) {
