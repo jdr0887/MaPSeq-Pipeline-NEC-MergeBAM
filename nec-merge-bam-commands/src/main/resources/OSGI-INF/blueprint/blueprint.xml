@@ -7,6 +7,8 @@
         <property name="maPSeqDAOBean" ref="maPSeqDAOBean" />
         <property name="maPSeqConfigurationService" ref="maPSeqConfigurationService" />
       </action>
+    </command>
+    <command>
       <action class="edu.unc.mapseq.commands.nec.mergebam.UpdateSubjectNameSampleAttributesAction">
         <property name="maPSeqDAOBean" ref="maPSeqDAOBean" />
       </action>
